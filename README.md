@@ -4,8 +4,7 @@ A Python-based tool for automating cryptocurrency airdrop participation. using S
 
 ## Features
 
-- Automatically completes mandatory social media tasks for airdrops
-- Handles Telegram, Twitter, Discord, and YouTube requirements
+- Automatically completes mandatory tasks for airdrops
 - Tracks completed airdrops to avoid duplicates
 - Uses AI to analyze content and generate context
 
