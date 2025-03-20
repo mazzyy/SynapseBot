@@ -173,6 +173,12 @@ class AirdropManager:
             return 'visit'
         elif "telegram" in task_text:
             return 'telegram'
+        elif "twitter" in task_text or "x (" in task_text:
+            return 'twitter'
+        elif "discord" in task_text:
+            return 'discord'
+        elif "youtube" in task_text:
+            return 'youtube'
         else:
             return 'unknown'
             
@@ -186,4 +192,63 @@ class AirdropManager:
         Returns:
             bool: True if all tasks completed successfully, False otherwise
         """
-       
+        try:
+            # Find all task elements on the page
+            task_elements = self.browser.wait_for_elements(
+                By.XPATH,
+                SELECTORS['task_items']
+            )
+            
+            if not task_elements:
+                logger.warning("No task elements found")
+                return False
+                
+            tasks_completed = 0
+            tasks_total = len(task_elements)
+            
+            for task in task_elements:
+                task_text = task.text
+                logger.info(f"Found task: {task_text}")
+                
+                # Determine task type
+                task_type = self.get_task_type(task_text)
+                
+                if task_type == 'unknown':
+                    logger.warning(f"Unknown task type: {task_text}")
+                    continue
+                
+                # Handle the task based on its type
+                if task_type == 'visit':
+                    # For visit tasks, create a simple handler
+                    self.task_handlers['visit'] = BaseTask(self.browser)
+                    
+                # Execute the task
+                handler = self.task_handlers.get(task_type)
+                if handler:
+                    success = handler.complete_task(task)
+                    if success:
+                        tasks_completed += 1
+                    else:
+                        logger.warning(f"Failed to complete {task_type} task")
+                else:
+                    logger.warning(f"No handler for task type: {task_type}")
+                
+                # Give a slight pause between tasks
+                self.browser.random_wait('medium')
+            
+            # Mark this airdrop as completed if all tasks were successful
+            if tasks_completed == tasks_total:
+                self.completed_airdrops[airdrop_name] = {
+                    'completed_date': time.strftime('%Y-%m-%d %H:%M:%S'),
+                    'status': 'success'
+                }
+                self._save_completed_airdrops()
+                logger.info(f"Successfully completed all tasks for {airdrop_name}")
+                return True
+            else:
+                logger.warning(f"Completed {tasks_completed}/{tasks_total} tasks for {airdrop_name}")
+                return False
+                
+        except Exception as e:
+            logger.exception(f"Error completing tasks: {e}")
+            return False
